@@ -96,16 +96,15 @@ shop의 메뉴이름과 주문이름이 같은가?
 옵션의 이름과 주문옵션의 이름 비교   
 옵션의 가격과 주문옵션의 가격 비교
 
-
-<img src="/Users/yslee/Documents/Programming/review/seminar/190620우아한객체지향/image/orderflow.png" style="max-width: 100%;">
+![orderflow](./image/orderflow.png)
 
 참조를 할 때는 반드시 이유가 있어야 한다.
 
-<img src="/Users/yslee/Documents/Programming/review/seminar/190620우아한객체지향/image/shop&orderlineitem.png">
+![shop&orderlineitem](./image/shop%26orderlineitem.png)
 
-<img src="/Users/yslee/Documents/Programming/review/seminar/190620우아한객체지향/image/validate().png">
+![validate()](./image/validate().png)
 
-<img src="/Users/yslee/Documents/Programming/review/seminar/190620우아한객체지향/image/shopvalidate.png">
+![shopvalidation](./image/shopvalidate.png)
 
-<img src="/Users/yslee/Documents/Programming/review/seminar/190620우아한객체지향/image/layeredarchitecture.png">
+![layeredArchitecture](./image/layeredarchitecture.png)
 
