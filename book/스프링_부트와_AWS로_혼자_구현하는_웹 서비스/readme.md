@@ -163,3 +163,94 @@ ex) sudo vim hostnamectl set-hostname freelec-springboot2-webservice
 <img src="./image/failconnect.png" width="200px" height="30px">   
 
 ***
+
+## Chapter 7
+### AWS RDS (Relational Database Service)
+AWS에서는 모니터링, 알랑, 백업, HA 구성 등을 모두 지원하는 관리형 서비스인 'RDS'를 제공. RDS는 AWS에서 지원하는 클라우드 기반 관계형 데이터베이스
+
+#### 데이터베이스 생성
+1. 엔진 설정      
+프리티어로 MariaDB로 만든다. (현재 버전 10.6.10 )
+
+2. 설정   
+DB 인스턴스 식별자 , 마스터 사용자 이름, 마스터암호를 적는다.
+이 사용자 정보로 실제 데이터베이스에 접근해서 잘 기억해야함
+
+3. 인스턴스 구성   
+db.t2.micro로 선택
+
+4. 스토리지 설정   
+20으로 스토리지를 설정한다
+
+5. 연결   
+VPC(Virtual Private Cloud)는 AWS의 DB 인스턴스를 위해 가상의 네트워크를 구성해주는 서비스이다. VPC 상에서 RDS DB 인스턴스를 생성하게 되면 외부에서는 이 DB에 직접적으로 접근할 수 없고, 이 DB로의 접근을 허용하는 동일 VPC상의 EC2 서버들(VPC 보안그룹)을 지정할 수 있기 때문에 보안상으로 안전해진다. 퍼블릭 액세스를 "예"로 체크하면 외부에서도 DB에 접근할 수 있고, "아니오"로 체크하면 RDS가 허가한 EC2 서버에서만 접근할 수 있게 된다.   
+퍼블랙 액세스는 '예'로 변경하고 이후 보안 그룹에서 지정된 IP만 접근하도록 막는다.
+
+6. 추가 구성   
+데이터베이스 포트는 3306
+
+7. 데이터베이스 이름을 작성한다.
+
+8. 작성 완료
+
+#### RDS 운영환경에 맞게 파라미터 설정
+1. 파라미터그룹   
+파라미터그룹을 MariaDB 버전에 맞게 생성하고 들어가서 파라미터 편집을 누른다.
+
+2. 설정 값 변경   
+- time_zone 을 Asia/Seoul 로 변경   
+- max_connections를 150으로 변경   
+RDS의 Max connection은 인스턴스 사양에 따라 자동으로 정해지는데 프리티어의 사양으로는 60개의 커넥션만 가능해 좀 넉넉한 값으로 지정했음. 후에 사양을 높이게 되면 기본값으로 다시 변경
+- character_set_client   
+character_set_connection   
+character_set_database   
+character_set_filesystem   
+character_set_results   
+character_set_server   
+character_set_client을 utf8mb4로 변경   
+collation_connection   
+collation_server를 utf8mb4_unicode_ci로 변경   
+utf8은 이모지 저장을 할 수 없지만 utf8mb4는 가능
+
+#### 파라미터 그룹을 데이터베이스에 연결
+만든 데이터베이스를 상세 정보를 수정한다. DB 파라미터그룹을 방금 만든 파라미터그룹으로 변경   
+수정사항이 반영되는 동안 데이터베이스가 작동하지 않을 수 있어서 예약시간을 거는 적용이 있지만 서비스가 오픈되지 않았을 때는 즉시 적용을 누름   
+(제대로 반영되지 않을 때가 있어서 데이터베이스 재부팅을 눌렀음)
+
+***
+### 내 PC에서 RDS에 접속하기
+로컬 PC에서 RDS로 접근하려면 RDS의 보안그룹에 내 PC의 IP를 추가해야함   
+- RDS의 VPC 보안그룹에 ec2에 사용된 보안그룹의 그룹ID와 내 IP를 복사해서 인바운드규칙에 추가
+<img src="./image/inbound.png" width="600px" height="100px">   
+- 인바운드규칙에 MYSQL/Aurora를 선택하면 자동으로 3306포트가 선택된다.   
+이렇게 하면 EC2와 RDS간에 접근이 가능하다
+(나의 경우 EC2생성시 EC2컴퓨팅리소스에 연결로 내 IP만 추가하면 되었다.)
+
+Database 플러그인 설치   
+Sequel Pro, MySQL Workbench , IntelliJ Database 플러그인 중 선택하면 된다. 
+RDS 데이터베이스 엔드포인트와 마스터 이름 , 비밀번호로 연결한다.
+
+콘솔창에서 데이터베이스 선택
+> use freelec_springboot2_webservice
+
+현재 character_set, collation 설정 확인
+>show variables like 'c%';
+
+character_set_database, collation_connection을 latin에서 utf8mb4로 변경
+> ALTER DATABASE 데이터베이스명   
+CHARACTER SET = 'utf8mb4'   
+COLLATE = 'utf8mb4_general_ci';
+
+타임존 확인
+>select @@time_zone, now();
+
+테이블은 모든 인코딩 설정 끝나고 하자
+
+### EC2 RDS에서 접근 확인   
+mysql 접근 테스트를 위해 MySQL CLI설치
+> sudo yum install mysql
+
+RDS에 접속
+> mysql -u 계정 -p -h host주소(엔드포인트)
+
+> show databases;
