@@ -38,28 +38,28 @@ AWS 프리티어 플랜에서의 EC2 사용의 제한
 ***
 
 1. 인스턴스 만들기 전 AWS 우측 상단에 리전을 서울로 변경   
-<img src="./image/region.png" width="200px" height="50px">
+<img src="./image/region.png" width="800px" height="50px">
 
 2. EC2 대시보드에서 인스턴스 시작하기
 
 3. AMI선택(Amazon Machine Image)   
-<img src="./image/AMI.png" width="200px" height="70px">   
+<img src="./image/AMI.png" width="800px" height="70px">   
 리눅스 1이 없어져 Amazon Linux 2 AMI 선택.   
 AWS의 각종 서비스와 상성이 좋고 Amazon 독자적인 리포지터리를 사용하고 있어 yum이 빠르다
 
 4. 인스턴스 유형 t2.micro 선택
-<img src="./image/instancetype.png" width="200px" height="50px">   
+<img src="./image/instancetype.png" width="800px" height="120px">   
 t2는 요금타입이고 micro는 사양을 말한다. 크레딧이란 일종의 CPU를 사용할 수 있는 포인트 개념이 있는데 인스턴스 크기에 따라 정해진 비율로 CPU 크레딧을 받으면서 사용하지 않을 때 크레딧 축적, 사용할 때 크레딧을 사용한다. 크레딧이 모두 사용되면 EC2 사용이 불가하다. 
 
 5. 네트워크 설정   
-<img src="./image/network.png" width="200px" height="70px">   
+<img src="./image/network.png" width="800px" height="120px">   
 기업에선 vpc, 서브넷 등을 세세하기 다루지만 혼자 1대의 서버만 사용해서 넘어가고 보안그룹이 launch-wizrard-1이란 이름으로 만들어진다   
 SSH이면서 포트 항복이 22인 경우는 AWS EC2에 터미널로 접속할 때를 말한다. pem키가 없으면 접속이 안되서 0.0.0.0/, ::/0 을 하는 경우가 있는데 보안을 높이자.. 지정된 IP에서만 ssh접속이 가능하도록 구성하자   
 집 이외에 장소에서 접속할 때는 해당 장소의 IP를 다시 SSH 규칙에 추가해서 접속하자!
 
 6. 스토리지 구성   
 스토리지는 하드디스크라 부르는 서버의 디스크를 이야기하며 서버의 용량을 얼마로 정할지 선택한다.
-<img src="./image/storage.png" width="200px" height="50px">   
+<img src="./image/storage.png" width="800px" height="120px">   
 기본값을 8GB 인데 30GB까지 프리티어가 가능하니 30GB로 변경
 
 7. pem키 설정   
@@ -134,9 +134,9 @@ EC2서버의 기본 타임존은 UTC. 세계표준시간이나 한국 시간과 
 3. Hostname 변경   
 여러 서버를 관리중일 때 IP만으로 어떤 서버인지 확인이 어려워서 변경해야함
 
-> sudo vim hostnamectl set-hostname [서비스명]   
+> sudo hostnamectl set-hostname [서비스명]   
 
-ex) sudo vim hostnamectl set-hostname freelec-springboot2-webservice
+ex) sudo hostnamectl set-hostname freelec-springboot2-webservice
 
 책에 나오는 명령어는 리눅스 1에 쓰이는 데 사용종료되서 위 명령어를 사용한다.
 명령어로 화면에 나오는 HOSTNAME을 원하는 서비스명으로 변경한 후 서버 재부팅   
@@ -151,7 +151,7 @@ ex) sudo vim hostnamectl set-hostname freelec-springboot2-webservice
 방금 등록한 HOSTNAME 등록
 > 127.0.0.1 등록한 HOSTNAME   
 
-<img src="./image/hostname.png" width="200px" height="30px">
+<img src="./image/hostname.png" width="800px" height="70px">
 
 다 등록하면 :wq 저장종료하고 다음 명령어로 확인
 
@@ -160,7 +160,7 @@ ex) sudo vim hostnamectl set-hostname freelec-springboot2-webservice
 잘못 등록했으면 Could not resolve host 에러   
 잘 등록했으면 Failed to connect to 에러   
 80포트로 실행된 서비스가 없어 80포트로 접근이 안된다는 에러가 뜸   
-<img src="./image/failconnect.png" width="200px" height="30px">   
+<img src="./image/failconnect.png" width="800px" height="70px">   
 
 ***
 
