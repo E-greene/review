@@ -2,7 +2,7 @@
 ***
 
 ## Chapter 6
-### AWS서버 환경 만들기 (AWS EC2)
+## AWS서버 환경 만들기 (AWS EC2)
 
 외부에서 내가 만든 서비스에 접근하려면 24시간 작동하는 서버가 필요하다   
 
@@ -165,7 +165,7 @@ ex) sudo hostnamectl set-hostname freelec-springboot2-webservice
 ***
 
 ## Chapter 7
-### AWS RDS (Relational Database Service)
+## AWS RDS (Relational Database Service)
 AWS에서는 모니터링, 알랑, 백업, HA 구성 등을 모두 지원하는 관리형 서비스인 'RDS'를 제공. RDS는 AWS에서 지원하는 클라우드 기반 관계형 데이터베이스
 
 #### 데이터베이스 생성
@@ -254,3 +254,222 @@ RDS에 접속
 > mysql -u 계정 -p -h host주소(엔드포인트)
 
 > show databases;
+***
+
+## çhapter 8
+## EC2서버에 프로젝트 배포하기
+
+### EC2 프로젝트 Clone 받기   
+
+깃허브에서 코드 받을 수 있게 EC2에 깃 설치
+> sudo yum install git
+
+깃 설치 확인
+> git --version
+
+프로젝트를 저장할 디렉토리 생성
+> mkdir ~/app && mkdir ~/app/step1
+
+생성된 디렉토리로 이동
+> cd ~/app/step1
+
+깃허브에서 저장소 주소 복사하고 git clone
+> git clone 복사한주소
+
+확인
+> cd 프로젝트명   
+> ll
+
+코드가 잘되는지 테스트 검증
+> ./gradlew test
+
+깃헙에 올린 코드에 문제가 있으면 수정해서 푸시한 다음 git pull
+
+gradlew 실행 권한이 없다는 메시지가 뜨면   
+-bash: ./gradlew: Permission denied
+다음 명령어로 실행권한 추가한 뒤 다시 테스트
+> chmod +x ./gradlew
+
+### 배포 스크립트 만들기   
+
+배포란?   
+작성한 코드를 실제 서버에 반영하는 것
+
+이 책에서 배포의 의미는 다음 과정을 모두 포괄한다.
+- git clone혹은 git pull을 통해 새 버전의 프로젝트를 받음
+- gradle이나  maven을 통해 프로젝트 테스트와 빌드
+- EC2서버에서 해당 프로젝트 실행 및 재실행
+
+앞의 명령어들을 쉘 스크립트로 작성해 스크립트만 실행하면 차례로 진행되기 하도록 하면 편리하다.(쉡 스크립트는 .sh라는 파일 확장자를 가진 파일)
+
+~/app/step1/에 delpoy.sh파일 생성
+>vim ~/app/step1/deploy.sh   
+
+<img src="./image/deploysh.png" width="800px" height="300px">   
+
+코스 해석   
+REPOSITORY=/home/ec2-user/app/step1   
+- 프로젝트의 디렉토리 주소는 스크립트 내에서 자주 사용해서 변수로 저장 (프로젝트 네임도 동일)
+- 쉘에서는 타입 없이 선언
+- 쉘에서는 $변수명으로 변수를 사용 가능
+
+cd $REPOSITORY/$PROJECT_NAME/   
+변수 사용해서 git clone받았던 디렉토리로 이동
+
+git pull   
+마스터 브랜치의 최신 내용 받음
+
+./gradlew build   
+프로젝트 내부의 gradlew로 build수행
+
+cp ./build/libs/*.jar $REPOSITORY/   
+build 결과물인 jar파일을 복사해서 jar파일을 모아둔 위치로 복사
+
+CURRENT_PID=$(pgrep -f springboot-webservice)
+- 기존에 수행중이던 스프링부트 애플리케이션 종료
+- pgrep은 process id만 추출하는 명령어
+- -f 옵션은 프로세스 이름으로 찾음.
+
+if ~else ~fi
+- 현재 구동중인 프로세스 유무에 따라 기능수행
+- process id 값을 보고 프로세스가 있으면 프로세스 종료
+
+JAR_NAME=$(ls -tr $REPOSITORY/ | grep *.jar | tail -n 1)   
+- 새로 실행할 jar 파일명 찾음
+- 여러 jar파일이 생기기 때문에 tail -n으로 가장 최신의 jar파일을 변수에 저장
+
+nohup java -jar $REPOSITORY/$JAR_NAME 2>&1 &
+- 찾은 jar 파일명으로 해당 jar파일을 nohup으로 실행
+- 스프링 부트의 장점으로 특별히 외장톰캣 설치가 필요 없다.내장 톰캣을 사용해서 jar파일만 있으면 바로 웹 애플리케이션 서버 실행 가능
+- 일반적으로 자바를 실행할 때 java -jar라는 명령어를 사용하지만, 사용자가 터미널 접속을 끊을 때 애플리케이션도 같이 종료.
+- 애플리케이션 실행자가 터미널을 종료해도 계속 구동되도록 nohup 명령어 사용
+
+생성한 스크립트에 실행 권한 추가
+> chmod +x ./deploy.sh
+
+작성한 스크립트를 아래 명령어로 실행
+>./deploy.sh
+
+nohup.out을 열어 로그 확인 
+> vim nohup.out
+
+APPLICATION FAIL ClientRegistrationRepository를 찾을 수 없다고 나온다..
+
+### 외부 Security 파일 등록하기
+
+ClientRegistrationRepository를 생성하려면 clientId와 clientSecret이 필수이기 때문 (로컬PC에서 실행할 때는 application-oauth.properties가 있어서 문제 없었음. 깃헙에 안올라간 파일
+
+해결하려면 서버가 이 설정을 가지고 있어야 한다.
+
+아래 디렉토리에 properties파일 생성 하고 application-oauth.properties내용 복붙해서 저장
+>vim /home/ec2-user/app/application-oauth.properties
+
+deploy.sh에 properties파일 쓰도록 수정
+
+> nohup java -jar -Dspring.config.location=classpath:/application.properties,/home/ec2-user/app/application-oauth.properties $REPOSITORY/$JAR_NAME 2>&1 &
+
+-Dspring.config.location
+- 스프링 설정 파일 위치를 지정
+- 기본 옵션들을 담고 있는 application.properties랑 OAuth 설정 담고 있는 application-oauth.properties의 위치 지정
+- classpath가 붙으면 jar 안에 있는 resources 디렉토리를 기준으로 경로가 생성
+- application-oauth.properties는 외부에 파일이 있기 때문에 절대경로 사용
+
+다시 deploy.sh 실행
+
+### 스프링 부트 프로젝트로 RDS 접근하기
+MariaDB를 사용하는 RDS에서 스프링부트 프로젝트를 실행하기 위한 작업 필요
+- 테이블 생성 
+- 프로젝트 설정 : 자바 프로젝트가 MariaDB에 접근하려면 데이터베이스 드라이브가 필요해서 프로젝트에 추가해야함
+- EC2(리눅스서버) 설정 : 중요한 데이터베이스 접속정보 관리를 EC2서버 내부에서 관리하도록 설정
+
+테이블 설정   
+테스트 코드 수행 시 로그로 생성되는 CREATE TABLE쿼리와 intellij schema-sysql.sql파일에서 스프링 세션 테이블을 복사해서 테이블을 생성한다.
+
+프로젝트 설정   
+- MariaDB드라이버를 build.gradle에 등록한다
+> compile("org.mariadb.jdbc:mariadb-java-client")
+
+- src/main/resources/에 application-real.properties 파일을 만든다.
+(이 파일을 만들면 profile=real인 환경이 구성됨 - 보안/로그상 이슈가 될만한 설정은 모두 제거한다)
+
+>spring.profiles.include=oauth,real-db
+>spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+>spring.session.store-type=jdbc
+
+EC2 설정   
+OAuth와 같이 RDS 접속 정보도 보호해야 할 정보여서 EC2 서버에 직접 설정파일을 둔다.   
+app디렉토리에 application-real-db.properties파일 생성
+> vim ~/app/application-real-db.properties
+
+아래 내용 추가
+>spring.jpa.hibernate.ddl-auto=none
+>spring.datasource.url=jdbc:mariadb://rds주소:포트명(기본은3306)/database이름(freelec_springboot2_webservice)
+>spring.datasource.username=db계정
+>spring.datasource.password=db계정 비밀번호
+>spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
+
+코드설명   
+spring.jpa.hibernate.ddl-auto=none   
+- JPA로 테이블이 자동 생성되는 옵션을 None(생성하지 않음)으로 지정
+- RDS에는 실제 운영으로 사용될 테이블이니 절대 스프링 부트에서 새로 만들지 않도록 해야함
+- 이 옵션을 하지 않으면 테이블이 모두 새로 생성될 수 있음 주의!!!
+
+
+deploy.sh가 real profile을 쓸 수 있도록 수정   
+>nohup java -jar -Dspring.config.location=classpath:/application.properties,classpath:/application-real.properties,/home/ec2-user/app/application-oauth.properties,/home/ec2-user/app/application-real-db.properties -Dspring.profiles.active=real $REPOSITORY/$JAR_NAME 2>&1 &
+
+코드설명   
+-Dspring.progiles.active=real
+- application-real.properties를 활성화
+- application-real.properties의 spring.profiles.include=oauth,real-db옵션 때문에 real-db도 함께 활성화 대상에 포함
+
+다시 deploy.sh 실행   
+성공하면
+
+>curl localhost:8080
+
+### EC2에서 소셜 로그인하기
+EC2에 스프링부트 프로젝트가 8080포트로 배포되었으니 8080포트가 보안그룹에 열려있는지 확인
+없으면 인바운드규칙에 추가한다.
+
+#### AWS EC2 도메인으로 접속   
+AWS에서 생성한 EC2 인스턴스를 선택하면 상세정보에서 퍼블릭 DNS를 확인할 수 있다. 이 주소가 EC2에 자동으로 할당된 도메인이다. 이 주소로 어디서나 EC2서버에 접근가능하다.   
+도메인 주소에 8080포트를 붙여 브라우저에 입력
+
+구글에 EC2 주소 등록
+https://console.cloud.google.com/home/dashboard 들어간다음 내 프로젝트로 이동 -> API및서비스 -> 사용자 인증 정보 -> OAuth 동의 화면 -> 승인된 도메인에 퍼블릭 DNS등록하고 저장
+(지금은 바뀌어서 사용자 인증정보 승인된 리디렉션URI에 추가함)
+
+<img src="./image/ec2google.png" width="800px" height="200px">
+
+DNS주소:8080에서 다시 구글 로그인 하면 정상작동
+
+네이버에 EC2 주소 등록
+https://developers.naver.com/apps/#/myapps 로 접속해서 내 프로젝트 이동 -> API설정 -> PC 웹 항목 -> 서비스URL 과 Callback URL 2개 수정 
+
+<img src="./image/ec2naver.png" width="800px" height="200px">
+
+서비스 URL은
+- 로그인을 시도하는 서비스가 네이버에 등록된 서비스인지 판단하기 위한 항복
+- 8080포트 제외하고 실제 도메인 주소만 입력
+- 개발단계에서는 등록하지 않는 것을 추천
+- localhost도 테스트하고 싶으면 네이버 서비스를 하나 더 생성해서 키를 발급받으면 된다
+
+Callback URL
+- 전체 주소를 등록한다.(EC2퍼블릭DNS:8080/login/oauth2/code/naver)
+
+여기까지 스크립트를 작성해서 간편하게 빌드랑 배포를 진행했는데 불편한게 있음
+
+1. 수동 실행되는 Test
+    - 본인이 짠 코드가 다른 개발자의 코드에 영향을 끼치지 않는지 확인하기 위해 전체 테스트를 수행해야됨
+    - 현재 상태에서 항상 개발자가 작업을 진행할 때마다 수동으로 전체 테스트를 수행해야됨
+
+2. 수동 Build
+    - 다른 사람이 작성한 브랜치와 본인이 작성한 브랜치가 머지 되었을 때 이상이 없는지는 Build를 수행해봐야만 알 수 있음
+    - 이걸 매번 개발자가 직접 실행해봐야함
+    
+깃허브에 푸시하면 자동으로 테스트,빌드,배포가 되도록 해보자
+***
+
+
+
