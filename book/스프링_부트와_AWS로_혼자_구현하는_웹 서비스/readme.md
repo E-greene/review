@@ -75,10 +75,10 @@ SSH이면서 포트 항복이 22인 경우는 AWS EC2에 터미널로 접속할 
 ***
 ### EC2 서버에 접속하기   
 Mac의 경우 AWS와 같은 외부 서버로 SSH 접속할 때   
-> ssh -i [pem키위치] [EC2의탄력적IP주소]
+> ssh -i pem키위치 EC2의탄력적IP주소
 
 쉽게 ssh접속을 하도록 설정하는 법은 키페어 pem 파일을 ~/.ssh/로 복사해 옮겨놓으면 ssh실행 시 pem키 파일을 자동으로 읽어 접속
-> cp [pem키를 내려받은 위치] ~/.ssh/   
+> cp pem키를 내려받은 위치 ~/.ssh/   
 
 pem키의 권한 변경
 > chmod 600 ~/.ssh/pem키이름
